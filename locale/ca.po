@@ -1,0 +1,11 @@
+#
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
+msgctxt "error:purchase.purchase:"
+msgid ""
+"The purchase %s has to be assigned to a delivery address or a warehouse with"
+" an address assigned."
+msgstr ""
+"La compra %s ha d'assignar-se a una adreça de lliurament o a un magatzem amb "
+"una adreça assignada."
