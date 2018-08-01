@@ -49,7 +49,7 @@ class Purchase:
         Company = pool.get('company.company')
         company, = Company.search([('party', '=', self.party.id)])
 
-        purchase_lines = [(l.product.id, l.product.list_price, l.unit,
+        purchase_lines = [(l.product.id, l.unit_price, l.unit,
             l.quantity) for l in self.lines if l.type == 'line']
 
         with Transaction().set_user(company.company_user.id), \
@@ -92,11 +92,11 @@ class Purchase:
         sale_line = SaleLine()
         product = Product(product_id)
         sale_line.product = Product(product_id)
-        sale_line.unit_price = list_price
-        if not list_price:
-            sale_line.unit_price = product.cost_price
         sale_line.unit = unit
         sale_line.quantity = quantity
         sale_line.on_change_product()
-
+        price_field = 'unit_price'
+        if hasattr(sale_line, 'gross_unit_price'):
+            price_field = 'gross_unit_price'
+        setattr(sale_line, price_field, list_price)
         return sale_line
