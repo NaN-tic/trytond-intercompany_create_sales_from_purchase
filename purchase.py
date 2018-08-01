@@ -1,10 +1,17 @@
 # The COPYRIGHT file at the top level of this repository contains the full
 # copyright notices and license terms.
 from trytond.pool import Pool, PoolMeta
-from trytond.model import ModelView
+from trytond.model import ModelView, fields
 from trytond.transaction import Transaction
 
-__all__ = ['Purchase']
+__all__ = ['Purchase', 'Company']
+
+
+class Company:
+    __metaclass__ = PoolMeta
+    __name__ = 'company.company'
+
+    company_user = fields.Many2One('res.user', 'Company User')
 
 
 class Purchase:
@@ -41,11 +48,14 @@ class Purchase:
         Sale = pool.get('sale.sale')
         Company = pool.get('company.company')
         company, = Company.search([('party', '=', self.party.id)])
-        with Transaction().set_user(0), \
+
+        purchase_lines = [(l.product.id, l.product.list_price, l.unit,
+            l.quantity) for l in self.lines if l.type == 'line']
+
+        with Transaction().set_user(company.company_user.id), \
             Transaction().set_context(
                 company=company.id,
                 companies=Company.search([]),
-                user=0,
                 _check_access=False):
             sale = Sale()
             sale.comment = self.comment
@@ -63,10 +73,11 @@ class Purchase:
                 self.raise_user_error('empty_address', (self.rec_name,))
             sale.shipment_address = address
             sale.shipment_party = address.party
+            if hasattr(sale, 'price_list'):
+                sale.price_list = None
             lines = []
-            for line in self.lines:
-                if line.type == 'line':
-                    lines.append(self.create_intercompany_sale_line(line))
+            for line in purchase_lines:
+                lines.append(self.create_intercompany_sale_line(line))
             if lines:
                 sale.lines = tuple(lines)
 
@@ -77,12 +88,15 @@ class Purchase:
         SaleLine = pool.get('sale.line')
         Product = pool.get('product.product')
 
+        product_id, list_price, unit, quantity = line
         sale_line = SaleLine()
-        sale_line.product, = Product.search([('id', '=', line.product.id)])
-        if not sale_line.product.list_price:
-            sale_line.product.list_price = line.product.cost_price
-        sale_line.unit = line.unit
-        sale_line.quantity = line.quantity
+        product = Product(product_id)
+        sale_line.product = Product(product_id)
+        sale_line.unit_price = list_price
+        if not list_price:
+            sale_line.unit_price = product.cost_price
+        sale_line.unit = unit
+        sale_line.quantity = quantity
         sale_line.on_change_product()
 
         return sale_line
