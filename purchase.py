@@ -36,6 +36,7 @@ class Purchase:
         Sale = pool.get('sale.sale')
         self_companies = {x.party.id for x in Company.search([])}
         to_create = []
+
         for purchase in purchases:
             if purchase.party.id not in self_companies:
                 continue
@@ -90,7 +91,6 @@ class Purchase:
 
         product_id, list_price, unit, quantity = line
         sale_line = SaleLine()
-        product = Product(product_id)
         sale_line.product = Product(product_id)
         sale_line.unit = unit
         sale_line.quantity = quantity
