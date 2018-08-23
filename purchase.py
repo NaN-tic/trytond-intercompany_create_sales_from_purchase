@@ -7,15 +7,13 @@ from trytond.transaction import Transaction
 __all__ = ['Purchase', 'Company']
 
 
-class Company:
-    __metaclass__ = PoolMeta
+class Company(metaclass=PoolMeta):
     __name__ = 'company.company'
 
     company_user = fields.Many2One('res.user', 'Company User')
 
 
-class Purchase:
-    __metaclass__ = PoolMeta
+class Purchase(metaclass=PoolMeta):
     __name__ = 'purchase.purchase'
 
     @classmethod
