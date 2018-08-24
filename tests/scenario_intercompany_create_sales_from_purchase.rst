@@ -63,7 +63,7 @@ Create customer user::
     >>> supplier_user.main_company = company_supplier
     >>> supplier_user.company = company_supplier
     >>> supplier_user.save()
-    >>> company_supplier.company_user = supplier_user
+    >>> company_supplier.intercompany_user = supplier_user
     >>> company_supplier.save()
 
 Create chart of accounts::
@@ -93,7 +93,6 @@ Create tax::
     >>> config._context = User.get_preferences(True, config.context)
     >>> tax_customer = create_tax(Decimal('.10'), company_customer)
     >>> tax_customer.save()
-
 
 Create account categories::
 
@@ -143,7 +142,6 @@ Create payment term::
     >>> config._context = User.get_preferences(True, config.context)
     >>> payment_term = create_payment_term()
     >>> payment_term.save()
-
 
 Purchase 5 products::
 
