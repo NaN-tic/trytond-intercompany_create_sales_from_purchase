@@ -4,13 +4,14 @@ from trytond.pool import Pool, PoolMeta
 from trytond.model import ModelView, fields
 from trytond.transaction import Transaction
 
-__all__ = ['Purchase', 'Company']
+__all__ = ['Company', 'Purchase']
 
 
 class Company(metaclass=PoolMeta):
     __name__ = 'company.company'
-
-    company_user = fields.Many2One('res.user', 'Company User')
+    intercompany_user = fields.Many2One('res.user', 'Company User',
+        help='User with company rules when create a intercompany sale '
+            'from purchases.')
 
 
 class Purchase(metaclass=PoolMeta):
@@ -20,7 +21,7 @@ class Purchase(metaclass=PoolMeta):
     def __setup__(cls):
         super(Purchase, cls).__setup__()
         cls._error_messages.update({
-                'empty_address': ('The purchase %s has to be assigned to '
+                'empty_address': ('The purchase "%s" has to be assigned to '
                     'a delivery address or a warehouse with an '
                     'address assigned.')
                 })
@@ -28,17 +29,21 @@ class Purchase(metaclass=PoolMeta):
     @classmethod
     @ModelView.button
     def process(cls, purchases):
-        super(Purchase, cls).process(purchases)
         pool = Pool()
         Company = pool.get('company.company')
         Sale = pool.get('sale.sale')
-        self_companies = {x.party.id for x in Company.search([])}
-        to_create = []
 
+        super(Purchase, cls).process(purchases)
+
+        self_companies = {x.party.id for x in Company.search([])}
+
+        to_create = []
         for purchase in purchases:
             if purchase.party.id not in self_companies:
                 continue
-            to_create.append(purchase.create_intercompany_sale())
+            new_sale = purchase.create_intercompany_sale()
+            if new_sale:
+                to_create.append(new_sale)
         if to_create:
             Sale.save(to_create)
 
@@ -46,15 +51,18 @@ class Purchase(metaclass=PoolMeta):
         pool = Pool()
         Sale = pool.get('sale.sale')
         Company = pool.get('company.company')
-        company, = Company.search([('party', '=', self.party.id)])
+
+        company, = Company.search([('party', '=', self.party.id)], limit=1)
+        if not company.intercompany_user:
+            return
 
         purchase_lines = [(l.product.id, l.unit_price, l.unit,
             l.quantity) for l in self.lines if l.type == 'line']
 
-        with Transaction().set_user(company.company_user.id), \
+        with Transaction().set_user(company.intercompany_user.id), \
             Transaction().set_context(
                 company=company.id,
-                companies=Company.search([]),
+                companies=[company.id],
                 _check_access=False):
             sale = Sale()
             sale.comment = self.comment
@@ -88,6 +96,7 @@ class Purchase(metaclass=PoolMeta):
         Product = pool.get('product.product')
 
         product_id, list_price, unit, quantity = line
+
         sale_line = SaleLine()
         sale_line.product = Product(product_id)
         sale_line.unit = unit
