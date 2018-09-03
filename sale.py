@@ -6,7 +6,6 @@ from trytond.model import fields
 __all__ = ['SaleLine']
 
 
-class SaleLine:
-    __metaclass__ = PoolMeta
+class SaleLine(metaclass=PoolMeta):
     __name__ = 'sale.line'
     purchase_line = fields.Many2One('purchase.line', 'Purchase Line')
