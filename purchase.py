@@ -111,7 +111,7 @@ class Purchase:
         sale_line.quantity = line.quantity
         sale_line.on_change_product()
         if not sale_line.unit_price:
-            sale_line.unit_price = Decimal(0.0)
+            sale_line.unit_price = line.unit_price
         if hasattr(sale_line, 'gross_unit_price'):
             sale_line.gross_unit_price = sale_line.unit_price
         sale_line.purchase_line = line
