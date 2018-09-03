@@ -1,5 +1,6 @@
 # The COPYRIGHT file at the top level of this repository contains the full
 # copyright notices and license terms.
+from decimal import Decimal
 from trytond.pool import Pool, PoolMeta
 from trytond.model import ModelView, fields
 from trytond.transaction import Transaction
@@ -33,19 +34,25 @@ class Purchase(metaclass=PoolMeta):
         Company = pool.get('company.company')
         Sale = pool.get('sale.sale')
 
+        to_process = []
+        for purchase in purchases:
+            if purchase.state == 'confirmed':
+                to_process.append(purchase)
+
         super(Purchase, cls).process(purchases)
 
-        self_companies = {x.party.id for x in Company.search([])}
+        if to_process:
+            self_companies = {x.party.id for x in Company.search([])}
 
-        to_create = []
-        for purchase in purchases:
-            if purchase.party.id not in self_companies:
-                continue
-            new_sale = purchase.create_intercompany_sale()
-            if new_sale:
-                to_create.append(new_sale)
-        if to_create:
-            Sale.save(to_create)
+            to_create = []
+            for purchase in to_process:
+                if purchase.party.id not in self_companies:
+                    continue
+                new_sale = purchase.create_intercompany_sale()
+                if new_sale:
+                    to_create.append(new_sale)
+            if to_create:
+                Sale.save(to_create)
 
     def create_intercompany_sale(self):
         pool = Pool()
@@ -55,9 +62,6 @@ class Purchase(metaclass=PoolMeta):
         company, = Company.search([('party', '=', self.party.id)], limit=1)
         if not company.intercompany_user:
             return
-
-        purchase_lines = [(l.product.id, l.unit_price, l.unit,
-            l.quantity) for l in self.lines if l.type == 'line']
 
         with Transaction().set_user(company.intercompany_user.id), \
             Transaction().set_context(
@@ -83,7 +87,9 @@ class Purchase(metaclass=PoolMeta):
             if hasattr(sale, 'price_list'):
                 sale.price_list = None
             lines = []
-            for line in purchase_lines:
+            for line in self.lines:
+                if line.type != 'line':
+                    continue
                 lines.append(self.create_intercompany_sale_line(line))
             if lines:
                 sale.lines = tuple(lines)
@@ -95,15 +101,16 @@ class Purchase(metaclass=PoolMeta):
         SaleLine = pool.get('sale.line')
         Product = pool.get('product.product')
 
-        product_id, list_price, unit, quantity = line
+        product = Product(line.product.id)
 
         sale_line = SaleLine()
-        sale_line.product = Product(product_id)
-        sale_line.unit = unit
-        sale_line.quantity = quantity
+        sale_line.product = product
+        sale_line.unit = line.unit
+        sale_line.quantity = line.quantity
         sale_line.on_change_product()
-        price_field = 'unit_price'
+        if not sale_line.unit_price:
+            sale_line.unit_price = Decimal(0.0)
         if hasattr(sale_line, 'gross_unit_price'):
-            price_field = 'gross_unit_price'
-        setattr(sale_line, price_field, list_price)
+            sale_line.gross_unit_price = sale_line.unit_price
+        sale_line.purchase_line = line
         return sale_line
