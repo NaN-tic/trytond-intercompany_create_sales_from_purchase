@@ -14,6 +14,10 @@ msgctxt "field:company.company,intercompany_user:"
 msgid "Company User"
 msgstr "Usuario empresa"
 
+msgctxt "field:sale.line,purchase_line:"
+msgid "Purchase Line"
+msgstr "Línea compra"
+
 msgctxt "help:company.company,intercompany_user:"
 msgid "User with company rules when create a intercompany sale from purchases."
 msgstr ""
