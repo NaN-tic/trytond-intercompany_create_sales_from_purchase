@@ -58,6 +58,7 @@ class Purchase:
 
     def create_intercompany_sale(self):
         pool = Pool()
+        Party = pool.get('party.party')
         Sale = pool.get('sale.sale')
         Company = pool.get('company.company')
 
@@ -70,18 +71,21 @@ class Purchase:
                 company=company.id,
                 companies=[company.id],
                 _check_access=False):
+            party = Party(self.company.party.id)
             sale = Sale()
             sale.comment = self.comment
             sale.company = company
-            sale.party = self.company.party
+            sale.currency = self.currency
+            sale.party = party
             sale.on_change_party()
             sale.description = self.description
             sale.payment_term = self.payment_term
             sale.reference = self.number
             sale.sale_date = self.purchase_date
-            address = self.delivery_address if hasattr(
-                self, 'delivery_address') and \
-                self.delivery_address else self.warehouse.address
+            address = (self.delivery_address
+                if hasattr(self, 'delivery_address')
+                    and  self.delivery_address
+                else self.warehouse.address)
             if not address:
                 self.raise_user_error('empty_address', (self.rec_name,))
             sale.shipment_address = address
@@ -92,13 +96,13 @@ class Purchase:
             for line in self.lines:
                 if line.type != 'line':
                     continue
-                lines.append(self.create_intercompany_sale_line(line))
+                lines.append(self.create_intercompany_sale_line(sale, line))
             if lines:
                 sale.lines = tuple(lines)
 
         return sale
 
-    def create_intercompany_sale_line(self, line):
+    def create_intercompany_sale_line(self, sale, line):
         pool = Pool()
         SaleLine = pool.get('sale.line')
         Product = pool.get('product.product')
@@ -106,6 +110,7 @@ class Purchase:
         product = Product(line.product.id)
 
         sale_line = SaleLine()
+        sale_line.sale = sale
         sale_line.product = product
         sale_line.unit = line.unit
         sale_line.quantity = line.quantity
