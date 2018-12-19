@@ -115,7 +115,8 @@ class Purchase(metaclass=PoolMeta):
         sale_line.on_change_product()
         if not sale_line.unit_price:
             sale_line.unit_price = line.unit_price
-        if hasattr(sale_line, 'gross_unit_price'):
-            sale_line.gross_unit_price = sale_line.unit_price
+            if hasattr(SaleLine, 'gross_unit_price'):
+                sale_line.gross_unit_price = sale_line.unit_price.quantize(
+                    Decimal(1) / 10 ** SaleLine.gross_unit_price.digits[1])
         sale_line.purchase_line = line
         return sale_line
