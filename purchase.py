@@ -4,6 +4,8 @@ from decimal import Decimal
 from trytond.pool import Pool, PoolMeta
 from trytond.model import ModelView, fields
 from trytond.transaction import Transaction
+from trytond.i18n import gettext
+from trytond.exceptions import UserError
 
 __all__ = ['Company', 'Purchase']
 
@@ -17,15 +19,6 @@ class Company(metaclass=PoolMeta):
 
 class Purchase(metaclass=PoolMeta):
     __name__ = 'purchase.purchase'
-
-    @classmethod
-    def __setup__(cls):
-        super(Purchase, cls).__setup__()
-        cls._error_messages.update({
-                'empty_address': ('The purchase "%s" has to be assigned to '
-                    'a delivery address or a warehouse with an '
-                    'address assigned.')
-                })
 
     @classmethod
     @ModelView.button
@@ -85,7 +78,9 @@ class Purchase(metaclass=PoolMeta):
                     and  self.delivery_address
                 else self.warehouse.address)
             if not address:
-                self.raise_user_error('empty_address', (self.rec_name,))
+                raise UserError(gettext(
+                    'intercompany_create_sales_from_purchase.empty_address',
+                        address=self.rec_name))
             sale.shipment_address = address
             sale.shipment_party = address.party
             if hasattr(sale, 'price_list'):
