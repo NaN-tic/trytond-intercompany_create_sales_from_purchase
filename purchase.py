@@ -109,7 +109,11 @@ class Purchase(metaclass=PoolMeta):
         sale_line.quantity = line.quantity
         sale_line.on_change_product()
         if not sale_line.unit_price:
-            sale_line.unit_price = line.unit_price or Decimal(0)
+            sale_line.unit_price = line.unit_price
+            if not sale_line.unit_price:
+                raise UserError(gettext(
+                    'intercompany_create_sales_from_purchase.missing_unit_price',
+                        product=product.rec_name))
             if hasattr(SaleLine, 'gross_unit_price'):
                 sale_line.gross_unit_price = sale_line.unit_price.quantize(
                     Decimal(1) / 10 ** SaleLine.gross_unit_price.digits[1])

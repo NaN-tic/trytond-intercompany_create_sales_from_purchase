@@ -6,5 +6,8 @@ this repository contains the full copyright notices and license terms. -->
       <record model="ir.message" id="empty_address">
           <field name="text">The purchase "%(purchase)s" has to be assigned to a delivery address or a warehouse with an address assigned.</field>
       </record>
+      <record model="ir.message" id="missing_unit_price">
+          <field name="text">Product "%(product)s" misses an unit price.</field>
+      </record>
     </data>
 </tryton>
