@@ -26,7 +26,9 @@ class Purchase:
         cls._error_messages.update({
                 'empty_address': ('The purchase "%s" has to be assigned to '
                     'a delivery address or a warehouse with an '
-                    'address assigned.')
+                    'address assigned.'),
+                'missing_unit_price': ('Product "%(product)s" misses '
+                    'an unit price.'),
                 })
 
     @classmethod
@@ -116,7 +118,11 @@ class Purchase:
         sale_line.quantity = line.quantity
         sale_line.on_change_product()
         if not sale_line.unit_price:
-            sale_line.unit_price = line.unit_price or Decimal(0)
+            sale_line.unit_price = line.unit_price
+            if not sale_line.unit_price:
+                self.raise_user_error('missing_unit_price', {
+                        'product': product.rec_name,
+                        })
             if hasattr(SaleLine, 'gross_unit_price'):
                 sale_line.gross_unit_price = sale_line.unit_price.quantize(
                     Decimal(1) / 10 ** SaleLine.gross_unit_price.digits[1])

@@ -3,6 +3,10 @@ msgid ""
 msgstr "Content-Type: text/plain; charset=utf-8\n"
 
 msgctxt "error:purchase.purchase:"
+msgid "Product \"%(product)s\" misses an unit price."
+msgstr "Falta el precio unitario para el producto \"%(product)s\"."
+
+msgctxt "error:purchase.purchase:"
 msgid ""
 "The purchase \"%s\" has to be assigned to a delivery address or a warehouse with"
 " an address assigned."
