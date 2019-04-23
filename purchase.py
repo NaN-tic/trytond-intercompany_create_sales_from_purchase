@@ -73,16 +73,7 @@ class Purchase(metaclass=PoolMeta):
             sale.payment_term = self.payment_term
             sale.reference = self.number
             sale.sale_date = self.purchase_date
-            address = (self.delivery_address
-                if hasattr(self, 'delivery_address')
-                    and  self.delivery_address
-                else self.warehouse.address)
-            if not address:
-                raise UserError(gettext(
-                    'intercompany_create_sales_from_purchase.empty_address',
-                        address=self.rec_name))
-            sale.shipment_address = address
-            sale.shipment_party = address.party
+            sale.shipment_address = party.address_get(type='delivery')
             if hasattr(sale, 'price_list'):
                 sale.price_list = None
             lines = []
