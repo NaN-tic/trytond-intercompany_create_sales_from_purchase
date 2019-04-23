@@ -166,12 +166,6 @@ Purchase 5 products::
     >>> purchase_line.quantity = 3.0
     >>> purchase.click('quote')
     >>> purchase.click('confirm')
-    >>> purchase.click('process') # doctest: +IGNORE_EXCEPTION_DETAIL
-    Traceback (most recent call last):
-        ...
-    UserError: ...
-    >>> purchase.warehouse.address, = customer.addresses
-    >>> purchase.warehouse.save()
     >>> purchase.click('process')
 
     >>> purchase_number = purchase.number
