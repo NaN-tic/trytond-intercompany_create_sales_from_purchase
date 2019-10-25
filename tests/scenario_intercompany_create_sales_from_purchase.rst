@@ -118,10 +118,6 @@ Create product with differents list_price for companies::
     >>> template.cost_price_method = 'fixed'
     >>> template.account_category = account_category_customer
 
-    >>> # TODO: Delete the next 2 lines in 5.0 version
-    >>> template.account_expense = template.account_category.account_expense
-    >>> template.account_revenue = template.account_category.account_revenue
-
     >>> template.save()
     >>> product, = template.products
     >>> product.cost_price = Decimal('5')
