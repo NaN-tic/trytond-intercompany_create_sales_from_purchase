@@ -68,13 +68,16 @@ class Purchase:
         if not company.intercompany_user:
             return
 
+        default_values = Sale.default_get(Sale._fields.keys(),
+                with_rec_name=False)
+
         with Transaction().set_user(company.intercompany_user.id), \
             Transaction().set_context(
                 company=company.id,
                 companies=[company.id],
                 _check_access=False):
             party = Party(self.company.party.id)
-            sale = Sale()
+            sale = Sale(**default_values)
             sale.comment = self.comment
             sale.company = company
             sale.currency = self.currency
@@ -102,9 +105,12 @@ class Purchase:
         SaleLine = pool.get('sale.line')
         Product = pool.get('product.product')
 
+        default_values = SaleLine.default_get(SaleLine._fields.keys(),
+                with_rec_name=False)
+
         product = Product(line.product.id)
 
-        sale_line = SaleLine()
+        sale_line = SaleLine(**default_values)
         sale_line.sale = sale
         sale_line.product = product
         sale_line.unit = line.unit
