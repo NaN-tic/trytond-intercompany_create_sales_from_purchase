@@ -52,49 +52,79 @@ Create companies::
     >>> company_customer.party = customer
     >>> company_customer.currency = get_currency()
     >>> company_customer.save()
-    >>> companies = [company_supplier, company_customer]
+
+Create supplier user::
+
+    >>> User = Model.get('res.user')
+    >>> Group = Model.get('res.group')
+    >>> account_group, = Group.find([('name', '=', 'Account Administration')])
+    >>> product_group, = Group.find([('name', '=', 'Product Administration')])
+    >>> sale_group, = Group.find([('name', '=', 'Sales Administrator')])
+    >>> purchase_group, = Group.find([('name', '=', 'Purchase Administrator')])
+    >>> supplier_user = User()
+    >>> supplier_user.name = 'supplier'
+    >>> supplier_user.login = 'supplier'
+    >>> supplier_user.companies.append(company_supplier)
+    >>> supplier_user.company = company_supplier
+    >>> supplier_user.groups.append(account_group)
+    >>> supplier_user.groups.append(product_group)
+    >>> supplier_user.groups.append(sale_group)
+    >>> supplier_user.groups.append(purchase_group)
+    >>> supplier_user.save()
 
 Create customer user::
 
-    >>> User = Model.get('res.user')
-    >>> supplier_user = User()
-    >>> supplier_user.name = 'Customer'
-    >>> supplier_user.login = 'customer'
-    >>> supplier_user.main_company = company_supplier
-    >>> supplier_user.company = company_supplier
-    >>> supplier_user.save()
-    >>> company_supplier.intercompany_user = supplier_user
+    >>> account_group, = Group.find([('name', '=', 'Account Administration')])
+    >>> product_group, = Group.find([('name', '=', 'Product Administration')])
+    >>> sale_group, = Group.find([('name', '=', 'Sales Administrator')])
+    >>> purchase_group, = Group.find([('name', '=', 'Purchase Administrator')])
+    >>> customer_user = User()
+    >>> customer_user.name = 'customer'
+    >>> customer_user.login = 'customer'
+    >>> customer_user.companies.append(company_customer)
+    >>> customer_user.company = company_customer
+    >>> customer_user.groups.append(account_group)
+    >>> customer_user.groups.append(product_group)
+    >>> customer_user.groups.append(sale_group)
+    >>> customer_user.groups.append(purchase_group)
+    >>> customer_user.save()
+
+    >>> company_supplier.intercompany_user = customer_user
     >>> company_supplier.save()
 
 Create chart of accounts::
 
     >>> User = Model.get('res.user')
-    >>> current_user, = User.find([('login', '=', 'admin')])
-    >>> current_user.main_company = company_supplier
-    >>> current_user.save()
+
+    >>> company_supplier = Company(company_supplier.id)
+    >>> company_customer = Company(company_customer.id)
+
+    >>> config.user = supplier_user.id
     >>> config._context = User.get_preferences(True, config.context)
     >>> _ = create_chart(company_supplier)
     >>> accounts_supplier = get_accounts(company_supplier)
-    >>> current_user.main_company = company_customer
-    >>> current_user.save()
+
+    >>> tax_supplier = create_tax(Decimal('.10'), company_supplier)
+    >>> tax_supplier.save()
+
+    >>> config.user = customer_user.id
     >>> config._context = User.get_preferences(True, config.context)
     >>> _ = create_chart(company_customer)
     >>> accounts_customer = get_accounts(company_customer)
 
-Create tax::
-
-    >>> current_user.main_company = company_supplier
-    >>> current_user.save()
-    >>> config._context = User.get_preferences(True, config.context)
-    >>> tax_supplier = create_tax(Decimal('.10'), company_supplier)
-    >>> tax_supplier.save()
-    >>> current_user.main_company = company_customer
-    >>> current_user.save()
-    >>> config._context = User.get_preferences(True, config.context)
     >>> tax_customer = create_tax(Decimal('.10'), company_customer)
     >>> tax_customer.save()
 
 Create account categories::
+
+    >>> admin_user, = User.find([('login', '=', 'admin')])
+    >>> config._context = User.get_preferences(True, config.context)
+    >>> config.user = admin_user.id
+    >>> admin_user = User(admin_user.id)
+    >>> admin_user.companies.append(company_customer)
+    >>> admin_user.company = company_customer
+    >>> admin_user.save()
+    >>> config._context = User.get_preferences(True, config.context)
 
     >>> ProductCategory = Model.get('product.category')
     >>> account_category_customer = ProductCategory(name="Account Category")
@@ -117,25 +147,23 @@ Create product with differents list_price for companies::
     >>> template.list_price = Decimal('10')
     >>> template.cost_price_method = 'fixed'
     >>> template.account_category = account_category_customer
-
     >>> template.save()
     >>> product, = template.products
     >>> product.cost_price = Decimal('5')
     >>> product.save()
-    >>> current_user.main_company = company_supplier
-    >>> current_user.save()
-    >>> config._context = User.get_preferences(True, config.context)
+
+Set price in supplier company::
+
+    >>> config.user = supplier_user.id
     >>> template, = ProductTemplate.find([])
     >>> template.list_price = Decimal('15')
     >>> template.save()
 
 Create payment term::
 
+    >>> config.user = admin_user.id
     >>> payment_term = create_payment_term()
     >>> payment_term.save()
-    >>> current_user.main_company = company_customer
-    >>> current_user.save()
-    >>> config._context = User.get_preferences(True, config.context)
     >>> payment_term = create_payment_term()
     >>> payment_term.save()
 
@@ -179,9 +207,11 @@ Purchase 5 products::
     ...        'unit_price': x.unit_price,
     ...        'cost_price': x.product.cost_price,
     ...        } for x in purchase.lines if x.type == 'line']
-    >>> current_user.main_company = company_supplier
-    >>> current_user.save()
+
+
+    >>> config.user = supplier_user.id
     >>> config._context = User.get_preferences(True, config.context)
+
     >>> sale, = Sale.find(['reference', '=', purchase_number])
     >>> sale.comment == purchase_comment
     True
