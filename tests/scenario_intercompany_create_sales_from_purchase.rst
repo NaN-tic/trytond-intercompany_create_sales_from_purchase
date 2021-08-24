@@ -196,7 +196,6 @@ Purchase 5 products::
     >>> purchase_comment = purchase.comment
     >>> purchase_party = purchase.company.party
     >>> purchase_currency = purchase.currency
-    >>> purchase_currency_digits = purchase.currency_digits
     >>> purchase_description = purchase.description
     >>> purchase_payment_term = purchase.payment_term
     >>> purchase_purchase_date = purchase.purchase_date
@@ -218,8 +217,6 @@ Purchase 5 products::
     >>> sale.party == purchase_party
     True
     >>> sale.currency == purchase_currency
-    True
-    >>> sale.currency_digits == purchase_currency_digits
     True
     >>> sale.description == purchase_description
     True
