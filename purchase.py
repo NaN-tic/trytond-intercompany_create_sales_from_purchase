@@ -57,14 +57,15 @@ class Purchase(metaclass=PoolMeta):
         if not company.intercompany_user:
             return
 
-        default_values = Sale.default_get(Sale._fields.keys(),
-                with_rec_name=False)
-
         with Transaction().set_user(company.intercompany_user.id), \
             Transaction().set_context(
                 company=company.id,
                 companies=[company.id],
                 _check_access=False):
+
+            default_values = Sale.default_get(Sale._fields.keys(),
+                    with_rec_name=False)
+
             party = Party(self.company.party.id)
             sale = Sale(**default_values)
             sale.comment = self.comment
