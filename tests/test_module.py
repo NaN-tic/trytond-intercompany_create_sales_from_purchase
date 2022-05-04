@@ -9,6 +9,7 @@ from trytond.tests.test_tryton import ModuleTestCase
 class IntercompanyCreateSalesFromPurchaseTestCase(CompanyTestMixin, ModuleTestCase):
     'Test IntercompanyCreateSalesFromPurchase module'
     module = 'intercompany_create_sales_from_purchase'
+    extras = ['purchase_discount', 'sale_discount']
 
 
 del ModuleTestCase

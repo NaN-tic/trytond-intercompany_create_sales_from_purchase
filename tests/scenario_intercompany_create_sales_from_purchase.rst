@@ -10,7 +10,7 @@ Imports::
     >>> from operator import attrgetter
     >>> from proteus import Model, Wizard, Report, config
     >>> from trytond.tests.tools import activate_modules
-    >>> from trytond.modules.party_company.tests.test_party_company import (
+    >>> from trytond.modules.party_company.tests.test_module import (
     ...     set_company)
     >>> from trytond.modules.account.tests.tools import create_fiscalyear, \
     ...     create_chart, get_accounts, create_tax
