@@ -1,11 +1,11 @@
 # The COPYRIGHT file at the top level of this repository contains the full
 # copyright notices and license terms.
-from decimal import Decimal
 from trytond.pool import Pool, PoolMeta
 from trytond.model import ModelView, fields
 from trytond.transaction import Transaction
 from trytond.i18n import gettext
 from trytond.exceptions import UserError
+from trytond.modules.product import round_price
 
 __all__ = ['Company', 'Purchase']
 
@@ -113,7 +113,6 @@ class Purchase(metaclass=PoolMeta):
                     'intercompany_create_sales_from_purchase.missing_unit_price',
                         product=product.rec_name))
             if hasattr(SaleLine, 'gross_unit_price'):
-                sale_line.gross_unit_price = sale_line.unit_price.quantize(
-                    Decimal(1) / 10 ** SaleLine.gross_unit_price.digits[1])
+                sale_line.gross_unit_price = round_price(sale_line.unit_price)
         sale_line.purchase_line = line
         return sale_line
