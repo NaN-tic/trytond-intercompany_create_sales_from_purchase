@@ -14,15 +14,6 @@ msgstr ""
 "La compra \"%s\" ha d'assignar-se a una adreça de lliurament o a un magatzem amb "
 "una adreça assignada."
 
-msgctxt "field:company.company,intercompany_user:"
-msgid "Company User"
-msgstr "Usuari empresa"
-
 msgctxt "field:sale.line,purchase_line:"
 msgid "Purchase Line"
 msgstr "Linia compra"
-
-msgctxt "help:company.company,intercompany_user:"
-msgid "User with company rules when create a intercompany sale from purchases."
-msgstr ""
-"Usuari amb regles de l'empresa per crear la venta entre empreses desde compras."
