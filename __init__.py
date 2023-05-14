@@ -7,6 +7,5 @@ from . import sale
 def register():
     Pool.register(
         purchase.Purchase,
-        purchase.Company,
         sale.SaleLine,
         module='intercompany_create_sales_from_purchase', type_='model')
