@@ -75,12 +75,12 @@ class Purchase(metaclass=PoolMeta):
                 sale.price_list = None
             lines = []
             for line in self.lines:
-                if line.type != 'line':
+                if line.type != 'line' and not line.salable:
                     continue
                 lines.append(self.create_intercompany_sale_line(sale, line))
-            if lines:
-                sale.lines = tuple(lines)
-
+            if not lines:
+                return
+            sale.lines = tuple(lines)
         return sale
 
     def create_intercompany_sale_line(self, sale, line):
