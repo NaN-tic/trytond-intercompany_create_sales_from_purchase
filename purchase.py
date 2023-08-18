@@ -56,19 +56,21 @@ class Purchase(metaclass=PoolMeta):
 
             default_values = Sale.default_get(Sale._fields.keys(),
                     with_rec_name=False)
-
             party = Party(self.company.party.id)
             sale = Sale(**default_values)
+            if not sale.warehouse and Sale.warehouse.required:
+                sale.warehouse = self.warehouse
             sale.comment = self.comment
             sale.company = company
             sale.currency = self.currency
             sale.party = party
             sale.on_change_party()
+            sale.shipment_party = self.party
+            sale.on_change_shipment_party()
             sale.description = self.description
             sale.payment_term = self.payment_term
             sale.reference = self.number
             sale.sale_date = self.purchase_date
-            sale.shipment_address = party.address_get(type='delivery')
             if hasattr(sale, 'price_list'):
                 sale.price_list = None
             lines = []
