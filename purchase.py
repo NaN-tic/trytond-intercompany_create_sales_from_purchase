@@ -69,8 +69,6 @@ class Purchase(metaclass=PoolMeta):
             sale.reference = self.number
             sale.sale_date = self.purchase_date
             sale.shipment_address = party.address_get(type='delivery')
-            if hasattr(sale, 'price_list'):
-                sale.price_list = None
             lines = []
             for line in self.lines:
                 if line.type != 'line':
