@@ -105,6 +105,7 @@ Create chart of accounts::
     >>> accounts_supplier = get_accounts(company_supplier)
 
     >>> tax_supplier = create_tax(Decimal('.10'), company_supplier)
+    >>> tax_supplier.company = company_supplier
     >>> tax_supplier.save()
 
     >>> config.user = customer_user.id
@@ -113,6 +114,7 @@ Create chart of accounts::
     >>> accounts_customer = get_accounts(company_customer)
 
     >>> tax_customer = create_tax(Decimal('.10'), company_customer)
+    >>> tax_customer.company = company_customer
     >>> tax_customer.save()
 
 Create account categories::
