@@ -1,7 +1,7 @@
 # The COPYRIGHT file at the top level of this repository contains the full
 # copyright notices and license terms.
 from trytond.pool import Pool, PoolMeta
-from trytond.model import ModelView, fields
+from trytond.model import ModelView
 from trytond.transaction import Transaction
 from trytond.i18n import gettext
 from trytond.exceptions import UserError
@@ -65,7 +65,10 @@ class Purchase(metaclass=PoolMeta):
             sale.currency = self.currency
             sale.party = party
             sale.on_change_party()
-            sale.shipment_party = self.party
+            if hasattr(self, 'customer') and self.customer:
+                sale.shipment_party = self.customer
+            else:
+                sale.shipment_party = self.party
             sale.on_change_shipment_party()
             sale.description = self.description
             sale.payment_term = self.payment_term
