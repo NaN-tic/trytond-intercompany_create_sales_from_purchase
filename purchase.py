@@ -1,7 +1,7 @@
 # The COPYRIGHT file at the top level of this repository contains the full
 # copyright notices and license terms.
 from trytond.pool import Pool, PoolMeta
-from trytond.model import ModelView, fields
+from trytond.model import ModelView
 from trytond.transaction import Transaction
 from trytond.i18n import gettext
 from trytond.exceptions import UserError
@@ -56,27 +56,35 @@ class Purchase(metaclass=PoolMeta):
 
             default_values = Sale.default_get(Sale._fields.keys(),
                     with_rec_name=False)
-
             party = Party(self.company.party.id)
             sale = Sale(**default_values)
+            if not sale.warehouse and Sale.warehouse.required:
+                sale.warehouse = self.warehouse
             sale.comment = self.comment
             sale.company = company
             sale.currency = self.currency
             sale.party = party
             sale.on_change_party()
+            if hasattr(self, 'customer') and self.customer:
+                sale.shipment_party = self.customer
+            else:
+                sale.shipment_party = self.party
+            sale.on_change_shipment_party()
             sale.description = self.description
             sale.payment_term = self.payment_term
             sale.reference = self.number
             sale.sale_date = self.purchase_date
+            if hasattr(sale, 'price_list'):
+                sale.price_list = None
             sale.shipment_address = party.address_get(type='delivery')
             lines = []
             for line in self.lines:
-                if line.type != 'line':
+                if line.type != 'line' and not line.salable:
                     continue
                 lines.append(self.create_intercompany_sale_line(sale, line))
-            if lines:
-                sale.lines = tuple(lines)
-
+            if not lines:
+                return
+            sale.lines = tuple(lines)
         return sale
 
     def create_intercompany_sale_line(self, sale, line):
