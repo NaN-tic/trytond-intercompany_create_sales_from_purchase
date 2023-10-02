@@ -74,8 +74,6 @@ class Purchase(metaclass=PoolMeta):
             sale.payment_term = self.payment_term
             sale.reference = self.number
             sale.sale_date = self.purchase_date
-            if hasattr(sale, 'price_list'):
-                sale.price_list = None
             sale.shipment_address = party.address_get(type='delivery')
             lines = []
             for line in self.lines:
