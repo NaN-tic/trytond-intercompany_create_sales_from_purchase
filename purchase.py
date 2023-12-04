@@ -18,8 +18,7 @@ class Purchase(metaclass=PoolMeta):
 
         to_process = []
         for purchase in purchases:
-            if purchase.state == 'confirmed':
-                to_process.append(purchase)
+            to_process.append(purchase)
 
         super(Purchase, cls).process(purchases)
 
@@ -55,6 +54,11 @@ class Purchase(metaclass=PoolMeta):
             default_values = Sale.default_get(Sale._fields.keys(),
                     with_rec_name=False)
             party = Party(self.company.party.id)
+            sale = Sale.search([
+                ('reference', '=', self.number)], limit=1)
+
+            if sale:
+                return
             sale = Sale(**default_values)
             if not sale.warehouse and Sale.warehouse.required:
                 sale.warehouse = self.warehouse
