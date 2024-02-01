@@ -15,6 +15,7 @@ class Purchase(metaclass=PoolMeta):
         pool = Pool()
         Company = pool.get('company.company')
         Sale = pool.get('sale.sale')
+        User = pool.get('res.user')
 
         to_process = []
         for purchase in purchases:
@@ -23,71 +24,79 @@ class Purchase(metaclass=PoolMeta):
         super(Purchase, cls).process(purchases)
 
         if to_process:
-            self_companies = {x.party.id for x in Company.search([])}
+            companies = Company.search([])
+            party_by_companies = dict((c.party.id, c) for c in companies)
+            to_create_by_company = {company: [] for company in companies
+                                        if company.intercompany_user}
 
-            to_create = []
+            # create sales grouping by company (user and context from each company)
             for purchase in to_process:
-                if purchase.party.id not in self_companies:
+                company = party_by_companies.get(purchase.party.id)
+                if company and company.intercompany_user:
+                    to_create_by_company[company] += [purchase]
+
+            for company, purchases in to_create_by_company.items():
+                if not purchases:
                     continue
-                new_sale = purchase.create_intercompany_sale()
-                if new_sale:
-                    to_create.append(new_sale)
-            if to_create:
-                Sale.save(to_create)
+                with Transaction().set_user(company.intercompany_user.id):
+                    context = User.get_preferences(context_only=True)
+                    # sure set context has the company
+                    context['company'] = company.id
+                    context['companies'] = [company.id]
+                    context['_check_access'] = False
+
+                with Transaction().set_user(company.intercompany_user.id), \
+                    Transaction().set_context(context):
+                        to_create = []
+                        for purchase in purchases:
+                            new_sale = purchase.create_intercompany_sale()
+                            if new_sale:
+                                to_create.append(new_sale)
+                        if to_create:
+                            Sale.save(to_create)
 
     def create_intercompany_sale(self):
         pool = Pool()
         Party = pool.get('party.party')
         Sale = pool.get('sale.sale')
-        Company = pool.get('company.company')
 
-        company, = Company.search([('party', '=', self.party.id)], limit=1)
-        if not company.intercompany_user:
+        sale = Sale.search([
+            ('reference', '=', self.number)], limit=1)
+        if sale:
             return
 
-        with Transaction().set_user(company.intercompany_user.id), \
-            Transaction().set_context(
-                company=company.id,
-                companies=[company.id],
-                _check_access=False):
+        default_values = Sale.default_get(Sale._fields.keys(),
+                with_rec_name=False)
+        party = Party(self.company.party.id)
 
-            default_values = Sale.default_get(Sale._fields.keys(),
-                    with_rec_name=False)
-            party = Party(self.company.party.id)
-            sale = Sale.search([
-                ('reference', '=', self.number)], limit=1)
-
-            if sale:
-                return
-            sale = Sale(**default_values)
-            if not sale.warehouse and Sale.warehouse.required:
-                sale.warehouse = self.warehouse
-            sale.comment = self.comment
-            sale.company = company
-            sale.currency = self.currency
-            sale.party = party
-            sale.on_change_party()
-            if hasattr(self, 'customer') and self.customer:
-                sale.shipment_party = self.customer
-                sale.shipment_address = self.customer.address_get(type='delivery')
-            else:
-                sale.shipment_party = self.party
-                sale.shipment_address = self.party.address_get(type='delivery')
-            if not sale.shipment_address:
-                sale.shipment_address = party.address_get(type='delivery')
-            sale.on_change_shipment_party()
-            sale.description = self.description
-            sale.payment_term = self.payment_term
-            sale.reference = self.number
-            sale.sale_date = self.purchase_date
-            lines = []
-            for line in self.lines:
-                if line.type != 'line' or not line.product or not line.product.salable:
-                    continue
-                lines.append(self.create_intercompany_sale_line(sale, line))
-            if not lines:
-                return
-            sale.lines = tuple(lines)
+        sale = Sale(**default_values)
+        if not sale.warehouse and Sale.warehouse.required:
+            sale.warehouse = self.warehouse
+        sale.comment = self.comment
+        sale.currency = self.currency
+        sale.party = party
+        sale.on_change_party()
+        if hasattr(self, 'customer') and self.customer:
+            sale.shipment_party = self.customer
+            sale.shipment_address = self.customer.address_get(type='delivery')
+        else:
+            sale.shipment_party = self.party
+            sale.shipment_address = self.party.address_get(type='delivery')
+        if not sale.shipment_address:
+            sale.shipment_address = party.address_get(type='delivery')
+        sale.on_change_shipment_party()
+        sale.description = self.description
+        sale.payment_term = self.payment_term
+        sale.reference = self.number
+        sale.sale_date = self.purchase_date
+        lines = []
+        for line in self.lines:
+            if line.type != 'line' or not line.product or not line.product.salable:
+                continue
+            lines.append(self.create_intercompany_sale_line(sale, line))
+        if not lines:
+            return
+        sale.lines = tuple(lines)
         return sale
 
     def create_intercompany_sale_line(self, sale, line):
