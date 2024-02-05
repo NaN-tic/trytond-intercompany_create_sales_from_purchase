@@ -60,14 +60,17 @@ class Purchase(metaclass=PoolMeta):
         Party = pool.get('party.party')
         Sale = pool.get('sale.sale')
 
+        party = Party(self.company.party.id)
+
         sale = Sale.search([
-            ('reference', '=', self.number)], limit=1)
+            ('reference', '=', self.number),
+            ('party', '=', party),
+            ], limit=1)
         if sale:
             return
 
         default_values = Sale.default_get(Sale._fields.keys(),
                 with_rec_name=False)
-        party = Party(self.company.party.id)
 
         sale = Sale(**default_values)
         if not sale.warehouse and Sale.warehouse.required:
