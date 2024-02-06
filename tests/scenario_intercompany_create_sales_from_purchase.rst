@@ -211,9 +211,10 @@ Purchase 5 products::
     ...        'cost_price': x.product.cost_price,
     ...        } for x in purchase.lines if x.type == 'line']
 
-
-    >>> config.user = supplier_user.id
-    >>> config._context = User.get_preferences(True, config.context)
+    >>> # config.user = supplier_user.id
+    >>> # config._context = User.get_preferences(True, config.context)
+    >>> root, =  User.find([('active', '=', False), ('login', '=', 'root')])
+    >>> config.user = root.id
 
     >>> sale, = Sale.find(['reference', '=', purchase_number])
     >>> sale.comment == purchase_comment
