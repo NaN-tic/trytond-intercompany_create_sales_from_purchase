@@ -80,12 +80,13 @@ class Purchase(metaclass=PoolMeta):
         sale.currency = self.currency
         sale.party = party
         sale.on_change_party()
-        if hasattr(self, 'customer') and self.customer:
-            sale.shipment_party = self.customer
-            sale.shipment_address = self.customer.address_get(type='delivery')
-        else:
-            sale.shipment_party = self.party
-            sale.shipment_address = self.party.address_get(type='delivery')
+        if Sale.shipment_party.required and not sale.shipment_party:
+            if hasattr(self, 'customer') and self.customer:
+                sale.shipment_party = self.customer
+                sale.shipment_address = self.customer.address_get(type='delivery')
+            else:
+                sale.shipment_party = party
+                sale.shipment_address = party.address_get(type='delivery')
         if not sale.shipment_address:
             sale.shipment_address = party.address_get(type='delivery')
         sale.on_change_shipment_party()
