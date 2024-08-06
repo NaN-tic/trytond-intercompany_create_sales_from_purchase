@@ -208,4 +208,4 @@ class Test(unittest.TestCase):
             self.assertEqual(purchase_line['product'], sale_line.product)
             self.assertEqual(purchase_line['quantity'], sale_line.quantity)
             self.assertEqual(purchase_line['unit'], sale_line.unit)
-            self.assertEqual(sale_line.unit_price in (sale_line.product.list_price, purchase_line['cost_price']))
+            self.assertEqual(sale_line.unit_price in (sale_line.product.list_price, purchase_line['cost_price']), True)
