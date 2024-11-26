@@ -122,7 +122,5 @@ class Purchase(metaclass=PoolMeta):
         sale_line.on_change_product()
         if sale_line.unit_price is None:
             sale_line.unit_price = line.unit_price
-            if hasattr(SaleLine, 'gross_unit_price'):
-                sale_line.gross_unit_price = round_price(sale_line.unit_price)
         sale_line.purchase_line = line
         return sale_line
