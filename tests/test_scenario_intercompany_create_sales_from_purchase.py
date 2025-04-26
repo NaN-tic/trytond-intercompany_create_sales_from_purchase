@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
         # Create supplier user
         User = Model.get('res.user')
         Group = Model.get('res.group')
-        account_group, = Group.find([('name', '=', 'Account Administration')])
+        account_group, = Group.find([('name', '=', 'Accounting Administration')])
         product_group, = Group.find([('name', '=', 'Product Administration')])
         sale_group, = Group.find([('name', '=', 'Sales Administrator')])
         purchase_group, = Group.find([('name', '=', 'Purchase Administrator')])
@@ -72,7 +72,7 @@ class Test(unittest.TestCase):
         supplier_user.save()
 
         # Create customer user
-        account_group, = Group.find([('name', '=', 'Account Administration')])
+        account_group, = Group.find([('name', '=', 'Accounting Administration')])
         product_group, = Group.find([('name', '=', 'Product Administration')])
         sale_group, = Group.find([('name', '=', 'Sales Administrator')])
         purchase_group, = Group.find([('name', '=', 'Purchase Administrator')])
