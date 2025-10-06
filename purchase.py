@@ -3,7 +3,6 @@
 from trytond.pool import Pool, PoolMeta
 from trytond.model import ModelView
 from trytond.transaction import Transaction
-from trytond.modules.product import round_price
 
 
 class Purchase(metaclass=PoolMeta):
