@@ -21,7 +21,7 @@ class Purchase(metaclass=PoolMeta):
             if purchase.state == 'confirmed':
                 to_process.append(purchase)
 
-        super(Purchase, cls).process(purchases)
+        super().process(purchases)
 
         if to_process:
             companies = Company.search([])
