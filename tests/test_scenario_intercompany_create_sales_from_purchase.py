@@ -86,8 +86,6 @@ class Test(unittest.TestCase):
         customer_user.groups.append(sale_group)
         customer_user.groups.append(purchase_group)
         customer_user.save()
-        company_supplier.intercompany_user = customer_user
-        company_supplier.save()
 
         # Create chart of accounts
         User = Model.get('res.user')
