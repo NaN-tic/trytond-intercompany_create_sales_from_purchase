@@ -14,7 +14,6 @@ class Purchase(metaclass=PoolMeta):
         pool = Pool()
         Company = pool.get('company.company')
         Sale = pool.get('sale.sale')
-        User = pool.get('res.user')
 
         to_process = []
         for purchase in purchases:
@@ -25,28 +24,22 @@ class Purchase(metaclass=PoolMeta):
 
         if to_process:
             companies = Company.search([])
-            party_by_companies = dict((c.party.id, c) for c in companies)
-            to_create_by_company = {company: [] for company in companies
-                                        if company.intercompany_user}
+            party_by_companies = dict((c.party, c) for c in companies)
+            to_create_by_company = {company: [] for company in companies}
 
             # create sales grouping by company (user and context from each company)
             for purchase in to_process:
-                company = party_by_companies.get(purchase.party.id)
-                if company and company.intercompany_user:
+                company = party_by_companies.get(purchase.party)
+                if company:
                     to_create_by_company[company] += [purchase]
 
             for company, purchases in to_create_by_company.items():
                 if not purchases:
                     continue
-                with Transaction().set_user(company.intercompany_user.id):
-                    context = User.get_preferences(context_only=True)
-                    # sure set context has the company
-                    context['company'] = company.id
-                    context['companies'] = [company.id]
-                    context['_check_access'] = False
 
-                with Transaction().set_user(company.intercompany_user.id), \
-                    Transaction().set_context(context):
+
+                with Transaction().set_user(0), \
+                    Transaction().set_context(company=company.id):
                         to_create = []
                         for purchase in purchases:
                             new_sale = purchase.create_intercompany_sale()
