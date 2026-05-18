@@ -9,3 +9,7 @@ def register():
         purchase.Purchase,
         sale.SaleLine,
         module='intercompany_create_sales_from_purchase', type_='model')
+    Pool.register(
+        purchase.PurchaseShop,
+        module='intercompany_create_sales_from_purchase', type_='model',
+        depends=['sale_shop'])
