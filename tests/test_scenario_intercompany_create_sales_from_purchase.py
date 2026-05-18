@@ -6,6 +6,7 @@ from trytond.modules.account.tests.tools import (create_chart, create_tax,
                                                  get_accounts)
 from trytond.modules.account_invoice.tests.tools import create_payment_term
 from trytond.modules.currency.tests.tools import get_currency
+from trytond.modules.sale_shop.tests.tools import create_shop
 from trytond.tests.test_tryton import drop_db
 from trytond.tests.tools import activate_modules
 
@@ -23,7 +24,8 @@ class Test(unittest.TestCase):
     def test(self):
 
         # Install intercompany_create_sales_from_purchase
-        config = activate_modules('intercompany_create_sales_from_purchase')
+        config = activate_modules([
+            'intercompany_create_sales_from_purchase', 'sale_shop'])
 
         # Create parties
         Party = Model.get('party.party')
@@ -110,6 +112,7 @@ class Test(unittest.TestCase):
         config._context = User.get_preferences(True, config.context)
         config.user = admin_user.id
         admin_user = User(admin_user.id)
+        admin_user.companies.append(company_supplier)
         admin_user.companies.append(company_customer)
         admin_user.company = company_customer
         admin_user.save()
@@ -151,6 +154,60 @@ class Test(unittest.TestCase):
         payment_term.save()
         payment_term = create_payment_term()
         payment_term.save()
+
+        # Create sale shops for both companies
+        PriceList = Model.get('product.price_list')
+        Sequence = Model.get('ir.sequence')
+
+        config.user = admin_user.id
+        admin_user.company = company_supplier
+        admin_user.save()
+        config._context = User.get_preferences(True, config.context)
+        config._context['company'] = company_supplier.id
+        config._context['companies'] = [
+            company_supplier.id, company_customer.id]
+        company_supplier = Company(company_supplier.id)
+        supplier_price_list = PriceList(name='Supplier', price='list_price')
+        supplier_price_list.company = company_supplier
+        supplier_price_list.save()
+        supplier_sale_sequence, = Sequence.find([
+            ('name', '=', 'Sale'),
+            ('company', 'in', [company_supplier.id, None]),
+            ], limit=1)
+        supplier_shop = create_shop(
+            payment_term, supplier_price_list, name='Supplier Shop',
+            sequence=supplier_sale_sequence)
+        supplier_shop.company = company_supplier
+        supplier_shop.save()
+        supplier_user = User(supplier_user.id)
+        supplier_user.shops.append(supplier_shop)
+        supplier_user.shop = supplier_shop
+        supplier_user.save()
+
+        config.user = admin_user.id
+        admin_user.company = company_customer
+        admin_user.save()
+        config._context = User.get_preferences(True, config.context)
+        config._context['company'] = company_customer.id
+        config._context['companies'] = [
+            company_supplier.id, company_customer.id]
+        company_customer = Company(company_customer.id)
+        customer_price_list = PriceList(name='Customer', price='list_price')
+        customer_price_list.company = company_customer
+        customer_price_list.save()
+        customer_sale_sequence, = Sequence.find([
+            ('name', '=', 'Sale'),
+            ('company', 'in', [company_customer.id, None]),
+            ], limit=1)
+        customer_shop = create_shop(
+            payment_term, customer_price_list, name='Customer Shop',
+            sequence=customer_sale_sequence)
+        customer_shop.company = company_customer
+        customer_shop.save()
+        customer_user = User(customer_user.id)
+        customer_user.shops.append(customer_shop)
+        customer_user.shop = customer_shop
+        customer_user.save()
 
         # Purchase 5 products
         Purchase = Model.get('purchase.purchase')
@@ -200,6 +257,8 @@ class Test(unittest.TestCase):
         self.assertEqual(sale.description, purchase_description)
         self.assertEqual(sale.payment_term, purchase_payment_term)
         self.assertEqual(sale.sale_date, purchase_purchase_date)
+        self.assertEqual(sale.company, company_supplier)
+        self.assertEqual(sale.shop, supplier_shop)
         self.assertEqual(len(sale.lines), len(purchase_lines))
 
         for purchase_line, sale_line in zip(purchase_lines, sale.lines):

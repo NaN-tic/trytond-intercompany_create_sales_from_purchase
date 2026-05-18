@@ -116,3 +116,21 @@ class Purchase(metaclass=PoolMeta):
             sale_line.unit_price = line.unit_price
         sale_line.purchase_line = line
         return sale_line
+
+
+class PurchaseShop(metaclass=PoolMeta):
+    __name__ = 'purchase.purchase'
+
+    def create_intercompany_sale(self):
+        Shop = Pool().get('sale.shop')
+
+        context = Transaction().context
+        sale = super().create_intercompany_sale()
+        if not sale.shop:
+            shops = Shop.search([
+                ('company', '=', sale.company),
+                ], limit=1)
+            if shops:
+                shop, = shops
+                sale.shop = shop
+        return sale
