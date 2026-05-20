@@ -9,6 +9,10 @@ class Purchase(metaclass=PoolMeta):
     __name__ = 'purchase.purchase'
 
     @classmethod
+    def get_intercompany_sale_context(cls, company):
+        return {'company': company.id}
+
+    @classmethod
     @ModelView.button
     def process(cls, purchases):
         pool = Pool()
@@ -39,7 +43,8 @@ class Purchase(metaclass=PoolMeta):
 
 
                 with Transaction().set_user(0), \
-                    Transaction().set_context(company=company.id):
+                    Transaction().set_context(
+                        **cls.get_intercompany_sale_context(company)):
                         to_create = []
                         for purchase in purchases:
                             new_sale = purchase.create_intercompany_sale()
@@ -121,16 +126,29 @@ class Purchase(metaclass=PoolMeta):
 class PurchaseShop(metaclass=PoolMeta):
     __name__ = 'purchase.purchase'
 
-    def create_intercompany_sale(self):
+    @classmethod
+    def get_sale_shop(cls, company):
         Shop = Pool().get('sale.shop')
 
-        context = Transaction().context
+        shops = Shop.search([
+            ('company', '=', company),
+            ], limit=1)
+        if shops:
+            shop, = shops
+            return shop
+
+    @classmethod
+    def get_intercompany_sale_context(cls, company):
+        context = super().get_intercompany_sale_context(company)
+        shop = cls.get_sale_shop(company)
+        if shop:
+            context['shops'] = [shop.id]
+        return context
+
+    def create_intercompany_sale(self):
         sale = super().create_intercompany_sale()
-        if not sale.shop:
-            shops = Shop.search([
-                ('company', '=', sale.company),
-                ], limit=1)
-            if shops:
-                shop, = shops
+        if sale and not sale.shop:
+            shop = self.get_sale_shop(sale.company)
+            if shop:
                 sale.shop = shop
         return sale
