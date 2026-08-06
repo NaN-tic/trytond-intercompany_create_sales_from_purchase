@@ -9,9 +9,7 @@ from configparser import ConfigParser
 
 MODULE = 'intercompany_create_sales_from_purchase'
 PREFIX = 'nantic'
-MODULE2PREFIX = {
-    'company_user': 'nantic',
-}
+MODULE2PREFIX = {}
 
 
 def read(fname):
