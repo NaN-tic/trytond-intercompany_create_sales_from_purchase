@@ -18,6 +18,7 @@ class Purchase(metaclass=PoolMeta):
         pool = Pool()
         Company = pool.get('company.company')
         Sale = pool.get('sale.sale')
+        SaleLine = pool.get('sale.line')
 
         to_process = []
         for purchase in purchases:
@@ -51,7 +52,18 @@ class Purchase(metaclass=PoolMeta):
                             if new_sale:
                                 to_create.append(new_sale)
                         if to_create:
-                            Sale.save(to_create)
+                            if 'available_products' in SaleLine._fields:
+                                context = Transaction().context.copy()
+                                context[
+                                    'skip_available_products_validation'] = True
+                                for sale in to_create:
+                                    sale._context = context
+                                    for line in sale.lines:
+                                        line._context = context
+                                with Transaction().set_context(**context):
+                                    Sale.save(to_create)
+                            else:
+                                Sale.save(to_create)
 
     def create_intercompany_sale(self):
         pool = Pool()
