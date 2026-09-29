@@ -79,7 +79,10 @@ class Purchase(metaclass=PoolMeta):
         if sale:
             return
 
-        default_values = Sale.default_get(Sale._fields.keys(),
+        default_values = Sale.default_get([
+                name for name, field in Sale._fields.items()
+                if not field.readonly
+                ],
                 with_rec_name=False)
 
         sale = Sale(**default_values)
@@ -118,7 +121,10 @@ class Purchase(metaclass=PoolMeta):
         SaleLine = pool.get('sale.line')
         Product = pool.get('product.product')
 
-        default_values = SaleLine.default_get(SaleLine._fields.keys(),
+        default_values = SaleLine.default_get([
+                name for name, field in SaleLine._fields.items()
+                if not field.readonly
+                ],
                 with_rec_name=False)
 
         product = Product(line.product.id)
