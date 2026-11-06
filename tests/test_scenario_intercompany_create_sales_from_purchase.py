@@ -89,33 +89,43 @@ class Test(unittest.TestCase):
         customer_user.groups.append(purchase_group)
         customer_user.save()
 
-        # Create chart of accounts
+        # Allow the administrator to configure both companies
         User = Model.get('res.user')
         company_supplier = Company(company_supplier.id)
         company_customer = Company(company_customer.id)
+        admin_user, = User.find([('login', '=', 'admin')])
+        admin_user.companies.append(company_supplier)
+        admin_user.companies.append(company_customer)
+        admin_user.company = company_supplier
+        admin_user.save()
+        config._context = User.get_preferences(True, config.context)
+        config._context['company'] = company_supplier.id
+        config._context['companies'] = [company_supplier.id, company_customer.id]
+
+        # Create charts of accounts
+        _ = create_chart(company_supplier)
+        admin_user.company = company_customer
+        admin_user.save()
+        config._context = User.get_preferences(True, config.context)
+        config._context['company'] = company_customer.id
+        config._context['companies'] = [company_supplier.id, company_customer.id]
+        _ = create_chart(company_customer)
+
         config.user = supplier_user.id
         config._context = User.get_preferences(True, config.context)
-        _ = create_chart(company_supplier)
         tax_supplier = create_tax(Decimal('.10'), company_supplier)
         tax_supplier.company = company_supplier
         tax_supplier.save()
         config.user = customer_user.id
         config._context = User.get_preferences(True, config.context)
-        _ = create_chart(company_customer)
         accounts_customer = get_accounts(company_customer)
         tax_customer = create_tax(Decimal('.10'), company_customer)
         tax_customer.company = company_customer
         tax_customer.save()
 
         # Create account categories
-        admin_user, = User.find([('login', '=', 'admin')])
-        config._context = User.get_preferences(True, config.context)
         config.user = admin_user.id
         admin_user = User(admin_user.id)
-        admin_user.companies.append(company_supplier)
-        admin_user.companies.append(company_customer)
-        admin_user.company = company_customer
-        admin_user.save()
         config._context = User.get_preferences(True, config.context)
         ProductCategory = Model.get('product.category')
         account_category_customer = ProductCategory(name="Account Category")
